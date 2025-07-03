@@ -166,5 +166,77 @@ Then add a `dev` script:
   * Terminate statements with `;` after the `)`.
 
 ---
+# SQL Cheat Sheet for Users Table
+
+## \*\* save from sql injection
+
+```js
+const client = await getClient();
+const insertUserText = 'INSERT INTO users (email, password) VALUES ($1, $2) RETURNING id';
+const userValues = ['john.do11e@gmail2.com', 'hashed_password_here'];
+
+let response = await client.query(insertUserText, userValues);
+```
+
+## \*\* The problem here is that there’s no such thing as an INSERT … IF EXISTS statement in PostgreSQL (or most SQL dialects). IF EXISTS only shows up in things like DROP TABLE IF EXISTS or CREATE EXTENSION IF NOT EXISTS, not in INSERT.
+
+## What you probably want
+
+1. A plain insert
+   If you just want to insert every time (and let the database complain on duplicates), do:
+
+```js
+const userText = `
+  INSERT INTO users (email, password)
+  VALUES ($1, $2)
+  RETURNING *;
+`;
+const userValues = ['rohit9264@gmail.com', '123456789'];
+```
+
+2. “Insert only if that email isn’t already there”
+   Use an upsert (INSERT … ON CONFLICT) or a conditional INSERT … SELECT:
+
+### a) Upsert that does nothing on conflict
+
+```js
+const userText = `
+  INSERT INTO users (email, password)
+  VALUES ($1, $2)
+  ON CONFLICT (email) DO NOTHING
+  RETURNING *;
+`;
+```
+
+This will insert a new row if email isn’t already in the table; if it is, it simply does nothing (no error) and returns an empty result set.
+
+### b) Conditional insert with WHERE NOT EXISTS
+
+```js
+const userText = `
+  INSERT INTO users (email, password)
+  SELECT $1, $2
+  WHERE NOT EXISTS (
+    SELECT 1 FROM users WHERE email = $1
+  )
+  RETURNING *;
+`;
+```
+
+This does the same “only insert if no row with that email exists” but works even if you haven’t declared a unique constraint on email.
+
+## QUERY 1:
+
+i want to perform the sql query like if i more than one email id has frequency >1 then i want to remove all thedulpicates just keep only one user id
+
+```sql
+delete from users 
+where id not in (
+select min(id)
+from users
+group by email
+)
+```
 
 Happy coding! 🚀
+
