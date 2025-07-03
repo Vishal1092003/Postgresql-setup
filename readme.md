@@ -12,7 +12,7 @@ This covers how to set up a Node.js project using TypeScript and the `pg` librar
 4. **TypeScript** installed globally (optional) or locally
 
 ---
-
+#TRY TO REMEBER THIS.
 ## 1. Install Dependencies
 
 From your project root:
